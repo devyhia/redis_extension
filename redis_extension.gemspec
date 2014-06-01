@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = RedisExtension::VERSION
   spec.authors       = ["Yehia Abo El-Nga"]
   spec.email         = ["yehia@devrok.com"]
-  spec.description   = %q{TODO: Write a gem description}
-  spec.summary       = %q{TODO: Write a gem summary}
+  spec.description   = %q{Adds Redis Caching Middleware to ActiveRecord models}
+  spec.summary       = %q{Adds Redis Caching Middleware to ActiveRecord models}
   spec.homepage      = ""
   spec.license       = "MIT"
 

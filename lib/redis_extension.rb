@@ -3,9 +3,27 @@ require "redis_extension/version"
 require 'active_support'
 require 'active_record'
 
+class Configuration
+	attr_accessor :redis
+
+	def initialize
+	  self.redis = nil
+	end
+end
+
+module RedisExtension
+	def self.configuration
+	  @configuration ||=  Configuration.new
+	end
+
+	def self.configure
+	  yield(configuration) if block_given?
+	end
+end
+
 module RedisExtension
 	extend ActiveSupport::Concern
-	
+
 	included do
 		after_save {
 			begin
@@ -22,7 +40,7 @@ module RedisExtension
 
 		after_destroy {
 			key = self.model_key
-			$redis.del(key)
+			RedisExtension.configuration.redis.del(key)
 			# self.class.set_cache(key, self)
 			ap "#{key} cached deleted!" if defined?(ap)
 		}
@@ -42,22 +60,22 @@ module RedisExtension
 	    def self.set_cache(key, obj, field=nil)
 	    	if obj.is_a?(Array) || obj.is_a?(ActiveRecord::Relation)
 	    		ap "This is a fucking array" if defined?(ap)
-				obj.each { |item| $redis.zadd(key, item.created_at.to_i, (field ? item[field] : item.id)) }
+				obj.each { |item| RedisExtension.configuration.redis.zadd(key, item.created_at.to_i, (field ? item[field] : item.id)) }
 	    	else
-	    		$redis.set(key, Marshal.dump(obj))
+	    		RedisExtension.configuration.redis.set(key, Marshal.dump(obj))
 	    	end
 	    end
 
 	    def self.get_cache(key, first=0, last=-1)
-	    	if $redis.type(key) == "zset"
-	    		$redis.zrange(key, first, last)
-	    	elsif $redis.type(key) == "string"
-	    		Marshal.load($redis.get(key))
+	    	if RedisExtension.configuration.redis.type(key) == "zset"
+	    		RedisExtension.configuration.redis.zrange(key, first, last)
+	    	elsif RedisExtension.configuration.redis.type(key) == "string"
+	    		Marshal.load(RedisExtension.configuration.redis.get(key))
 	    	end
 	    end
 
 	    def self.cache(key, field=nil)
-	    	if !$redis.exists(key)
+	    	if !RedisExtension.configuration.redis.exists(key)
 	    		obj = yield
 	    		set_cache(key, obj, field)
 	    	end
